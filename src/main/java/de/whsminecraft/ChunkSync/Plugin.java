@@ -1,24 +1,18 @@
 package de.whsminecraft.ChunkSync;
 
+import org.bukkit.Bukkit;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public class Plugin extends JavaPlugin {
     private static Plugin instance;
-    private static ChunkServer csInstance;
-    private static ChunkClient ccInstance;
 
     public static Plugin getInstance() {
         return instance;
-    }
-
-    public static ChunkServer getServerInstance() {
-        return csInstance;
-    }
-
-    public static ChunkClient getClientInstance() {
-        return ccInstance;
     }
 
     public Plugin() {
@@ -31,46 +25,21 @@ public class Plugin extends JavaPlugin {
 
         Commands cmds = new Commands();
 
-        if ("server".equals(getConfig().getString("mode"))) {
+        String mode = getConfig().getString("mode");
+        if ("server".equals(mode)) {
             getLogger().info("Starting in server mode");
-            csInstance = new ChunkServer();
-            try {
-                csInstance.start(1337);
-            } catch (IOException e) {
-                e.printStackTrace();
-                getLogger().severe("could not start up server");
-                return;
-            }
-        } else { // client
+            new Thread(new ChunkServer(1337)).start();
+        } else if ("client".equals(mode)) {
             getLogger().info("Starting in client mode");
-            ccInstance = new ChunkClient();
-            try {
-                ccInstance.startConnection("localhost", 1337);
-            } catch (IOException e) {
-                e.printStackTrace();
-                getLogger().severe("could not connect to server");
-                return;
-            }
-            String reply = ccInstance.sendMessage("hello server");
             getServer().getPluginManager().registerEvents(new ChunkSelector(), this);
+        } else {
+            getLogger().info("Unknown \"mode\" setting \"" + mode + "\"");
         }
 
         getCommand("chunksync").setExecutor(cmds);
 
 
         getLogger().info("Plugin was successfully enabled.");
-    }
 
-    @Override
-    public void onDisable() {
-        if (ccInstance != null) {
-            ccInstance.stopConnection();
-        }
-
-        if (csInstance != null) {
-            csInstance.stop();
-        }
-
-        getLogger().info("Plugin was successfully disabled.");
     }
 }

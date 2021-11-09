@@ -16,7 +16,14 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BlockIterator;
 
+
 public class ChunkSelector implements Listener {
+    private ChunkClient chunkClient;
+
+    public ChunkSelector() {
+        this.chunkClient = new ChunkClient("localhost", 1337);
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     public void onRightClick(PlayerInteractEvent e) {
         Action action = e.getAction();
@@ -39,13 +46,16 @@ public class ChunkSelector implements Listener {
             return;
 
         Chunk targetChunk = target.getChunk();
-        Plugin.getInstance().getLogger().info("Standing in chunk (" + targetChunk.getX() + ", " + targetChunk.getZ() + ")");
+        Plugin.getInstance().getLogger().info("Selected chunk (" + targetChunk.getX() + ", " + targetChunk.getZ() + ")");
 
+        new Thread(new ChunkHandler(targetChunk.getX(), targetChunk.getZ())).run();
+        /*
         ChunkSnapshot originChunk = e.getPlayer().getLocation().getChunk().getChunkSnapshot();
 
         ChunkReplacer cr = new ChunkReplacer();
         cr.replace(targetChunk, originChunk);
         Plugin.getInstance().getLogger().info("Replaced chunk");
+        */
     }
 
     static Block getTargetBlock(Player player, int maxDistance) throws IllegalStateException
@@ -66,5 +76,21 @@ public class ChunkSelector implements Listener {
         }
 
         return result;
+    }
+
+    private class ChunkHandler implements Runnable {
+        private int x;
+        private int z;
+
+        public ChunkHandler(int x, int z) {
+            this.x = x;
+            this.z = z;
+        }
+
+
+        @Override
+        public void run() {
+            chunkClient.requestChunk(x, z);
+        }
     }
 }
