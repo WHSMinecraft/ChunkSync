@@ -1,26 +1,61 @@
 package de.whsminecraft.ChunkSync;
 
-import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
-import org.bukkit.block.Block;
+
+import org.bukkit.Location;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class ChunkReplacer {
-    public boolean replace(Chunk to, ChunkSnapshot from) {
-        int x1 = 16*to.getX();
-        int z1 = 16*to.getZ();
+    private static ChunkReplacer instance;
 
-        int x2 = 16*from.getX();
-        int z2 = 16*from.getZ();
+    public static ChunkReplacer getInstance() {
+        if (instance == null)
+            instance = new ChunkReplacer();
+        return instance;
+    }
 
-        for (int xo = 0; xo < 16; xo++) {
-            for (int zo = 0; zo < 16; zo++) {
-                for (int y = 0; y < 256; y++) {
-                    Block b1 = to.getWorld().getBlockAt(x1+xo,y,z1+zo);
-                    Block b2 = to.getWorld().getBlockAt(x2+xo,y,z2+zo);
-                    b1.setType(b2.getType(), true);
+    private Queue<Change> changes;
+
+    private ChunkReplacer() {
+        instance = this;
+        changes = new LinkedList<>();
+    }
+
+
+    public void start() {
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                int maxChanges = 4096;
+
+                while (maxChanges > 0 && !changes.isEmpty()) {
+                    Change c = changes.poll();
+                    c.location.getBlock().setBlockData(c.data);
+                    Plugin.getInstance().getLogger().info("" + c.location + c.data);
+                    maxChanges--;
                 }
+                if (maxChanges != 4096)
+                    Plugin.getInstance().getLogger().info("Processed " + (4096 - maxChanges) + " changes");
             }
+        }.runTaskTimer(Plugin.getInstance(), 0, 1);
+
+        Plugin.getInstance().getLogger().info("Started replacer task with id " + task.getTaskId());
+    }
+
+    public void add(Change change) {
+        changes.offer(change);
+    }
+
+    public static class Change {
+        public Location location;
+        public BlockData data;
+        public Change(Location location, BlockData blockData) {
+            this.location = location;
+            this.data = blockData;
         }
-        return true;
     }
 }

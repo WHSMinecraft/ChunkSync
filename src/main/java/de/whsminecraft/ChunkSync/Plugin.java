@@ -1,12 +1,6 @@
 package de.whsminecraft.ChunkSync;
 
-import org.bukkit.Bukkit;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 public class Plugin extends JavaPlugin {
     private static Plugin instance;
@@ -32,6 +26,7 @@ public class Plugin extends JavaPlugin {
         } else if ("client".equals(mode)) {
             getLogger().info("Starting in client mode");
             getServer().getPluginManager().registerEvents(new ChunkSelector(), this);
+            ChunkReplacer.getInstance().start();
         } else {
             getLogger().info("Unknown \"mode\" setting \"" + mode + "\"");
         }

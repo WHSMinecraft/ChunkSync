@@ -1,10 +1,6 @@
 package de.whsminecraft.ChunkSync;
 
-import net.md_5.bungee.api.chat.ClickEvent;
-import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -48,14 +44,7 @@ public class ChunkSelector implements Listener {
         Chunk targetChunk = target.getChunk();
         Plugin.getInstance().getLogger().info("Selected chunk (" + targetChunk.getX() + ", " + targetChunk.getZ() + ")");
 
-        new Thread(new ChunkHandler(targetChunk.getX(), targetChunk.getZ())).run();
-        /*
-        ChunkSnapshot originChunk = e.getPlayer().getLocation().getChunk().getChunkSnapshot();
-
-        ChunkReplacer cr = new ChunkReplacer();
-        cr.replace(targetChunk, originChunk);
-        Plugin.getInstance().getLogger().info("Replaced chunk");
-        */
+        new Thread(new ChunkHandler(targetChunk)).start();
     }
 
     static Block getTargetBlock(Player player, int maxDistance) throws IllegalStateException
@@ -79,18 +68,16 @@ public class ChunkSelector implements Listener {
     }
 
     private class ChunkHandler implements Runnable {
-        private int x;
-        private int z;
+        private Chunk target;
 
-        public ChunkHandler(int x, int z) {
-            this.x = x;
-            this.z = z;
+        public ChunkHandler(Chunk chunk) {
+            target = chunk;
         }
 
 
         @Override
         public void run() {
-            chunkClient.requestChunk(x, z);
+            chunkClient.requestChunk(target);
         }
     }
 }

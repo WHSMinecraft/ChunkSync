@@ -2,6 +2,7 @@ package de.whsminecraft.ChunkSync;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 
 import java.io.*;
@@ -17,12 +18,12 @@ public class ChunkClient {
         this.port = port;
     }
 
-    public void requestChunk(int cx, int cz) {
+    public void requestChunk(Chunk target) {
         Socket clientSocket = null;
         try {
             clientSocket = new Socket(ip, port);
             OutputStream out = clientSocket.getOutputStream();
-            out.write(String.format("get-chunk %d %d\n", cx, cz).getBytes(StandardCharsets.UTF_8));
+            out.write(String.format("get-chunk %d %d\n", target.getX(), target.getZ()).getBytes(StandardCharsets.UTF_8));
             try {
                 clientSocket.shutdownOutput();
             } catch (IOException e) {
@@ -31,18 +32,21 @@ public class ChunkClient {
 
             Plugin.getInstance().getLogger().info("Reply");
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            Chunk target = Bukkit.getWorld("world").getChunkAt(cx, cz);
+            ChunkReplacer replacer = ChunkReplacer.getInstance();
             for (int y = 0; y < 256; y++) {
                 for (int x = 0; x < 16; x++) {
                     for (int z = 0; z < 16; z++) {
                         try {
                             String data = in.readLine();
-                            System.out.println("" + x + "," + y + "," + z + ": " + data);
                             BlockData blockData = Bukkit.createBlockData(data);
-                            target.getBlock(x, y, z).setBlockData(blockData);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                            Location location = new Location(
+                                    target.getWorld(),
+                                    x + target.getX() * 16,
+                                    y,
+                                    z + target.getZ() * 16
+                            );
+                            replacer.add(new ChunkReplacer.Change(location, blockData));
+                        } catch (IOException | IllegalArgumentException e) {}
                     }
                 }
             }

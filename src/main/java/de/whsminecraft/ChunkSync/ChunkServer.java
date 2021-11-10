@@ -1,14 +1,12 @@
 package de.whsminecraft.ChunkSync;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.block.data.BlockData;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
 public class ChunkServer implements Runnable {
     private int port;
