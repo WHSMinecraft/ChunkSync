@@ -4,6 +4,3 @@ author: Ruben Ollesch
 api-version: 1.17
 version: 1.0
 website: https://whsminecraft.de
-commands:
-  chunksync:
-    description: Replace the chunk you are currently standing in
