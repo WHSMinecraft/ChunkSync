@@ -1,1 +1,8 @@
+# Choose either server or client. Clients replace selected chunks with corresponding chunks from the server
 mode: client
+client:
+  port: 1337
+  host: localhost
+  select-tool: STICK
+server:
+  port: 1337

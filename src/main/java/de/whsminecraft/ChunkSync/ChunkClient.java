@@ -7,6 +7,7 @@ import org.bukkit.block.data.BlockData;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 public class ChunkClient {
@@ -23,14 +24,13 @@ public class ChunkClient {
         try {
             clientSocket = new Socket(ip, port);
             OutputStream out = clientSocket.getOutputStream();
-            out.write(String.format("get-chunk %d %d\n", target.getX(), target.getZ()).getBytes(StandardCharsets.UTF_8));
+            out.write(String.format("get-chunk %d %d %s\n", target.getX(), target.getZ(), target.getWorld().getName()).getBytes(StandardCharsets.UTF_8));
             try {
                 clientSocket.shutdownOutput();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            Plugin.getInstance().getLogger().info("Reply");
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             ChunkReplacer replacer = ChunkReplacer.getInstance();
             for (int y = 0; y < 256; y++) {
@@ -50,6 +50,8 @@ public class ChunkClient {
                     }
                 }
             }
+        } catch (UnknownHostException e) {
+            Plugin.getInstance().getLogger().severe("Could not resolve host \"" + ip + "\"");
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

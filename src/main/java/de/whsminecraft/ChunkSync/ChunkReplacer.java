@@ -4,7 +4,6 @@ package de.whsminecraft.ChunkSync;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -18,6 +17,9 @@ public class ChunkReplacer {
         return instance;
     }
 
+    // Block updates per tick. Updates have to be performed on the main thread, thus small chunks are important.
+    public final static int MAX_CHANGES = 4096;
+
     private Queue<Change> changes;
 
     private ChunkReplacer() {
@@ -27,23 +29,22 @@ public class ChunkReplacer {
 
 
     public void start() {
-        BukkitTask task = new BukkitRunnable() {
+        new BukkitRunnable() {
             @Override
             public void run() {
-                int maxChanges = 4096;
+                int changeBudget = MAX_CHANGES;
 
-                while (maxChanges > 0 && !changes.isEmpty()) {
+                while (changeBudget > 0 && !changes.isEmpty()) {
                     Change c = changes.poll();
                     c.location.getBlock().setBlockData(c.data);
-                    Plugin.getInstance().getLogger().info("" + c.location + c.data);
-                    maxChanges--;
+                    changeBudget--;
                 }
-                if (maxChanges != 4096)
-                    Plugin.getInstance().getLogger().info("Processed " + (4096 - maxChanges) + " changes");
+
+                int changed = MAX_CHANGES - changeBudget;
+                if (changed > 0)
+                    Plugin.getInstance().getLogger().info("Processed " + changed + " changes");
             }
         }.runTaskTimer(Plugin.getInstance(), 0, 1);
-
-        Plugin.getInstance().getLogger().info("Started replacer task with id " + task.getTaskId());
     }
 
     public void add(Change change) {

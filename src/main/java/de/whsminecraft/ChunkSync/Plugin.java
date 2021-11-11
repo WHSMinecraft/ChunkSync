@@ -1,5 +1,7 @@
 package de.whsminecraft.ChunkSync;
 
+import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Plugin extends JavaPlugin {
@@ -17,24 +19,36 @@ public class Plugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        Commands cmds = new Commands();
-
         String mode = getConfig().getString("mode");
+        ConfigurationSection config;
         if ("server".equals(mode)) {
             getLogger().info("Starting in server mode");
-            new Thread(new ChunkServer(1337)).start();
+            config = getConfig().getConfigurationSection("server");
+
+            new Thread(new ChunkServer(
+                    config.getInt("port")
+            )).start();
         } else if ("client".equals(mode)) {
             getLogger().info("Starting in client mode");
-            getServer().getPluginManager().registerEvents(new ChunkSelector(), this);
+            config = getConfig().getConfigurationSection("client");
+
+            ChunkClient chunkClient = new ChunkClient(
+                    config.getString("host"),
+                    config.getInt("port")
+            );
+            Material selectTool = Material.getMaterial(config.getString("select-tool"));
+            if (selectTool == null) {
+                getLogger().severe("No item found for setting \"client.select-tool\": \"" + config.getString("select-tool") +  "\"");
+            }
+            getServer().getPluginManager().registerEvents(
+                    new ChunkSelector(chunkClient, selectTool),
+                    this
+            );
             ChunkReplacer.getInstance().start();
         } else {
             getLogger().info("Unknown \"mode\" setting \"" + mode + "\"");
         }
 
-        getCommand("chunksync").setExecutor(cmds);
-
-
         getLogger().info("Plugin was successfully enabled.");
-
     }
 }

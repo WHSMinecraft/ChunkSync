@@ -15,9 +15,11 @@ import org.bukkit.util.BlockIterator;
 
 public class ChunkSelector implements Listener {
     private ChunkClient chunkClient;
+    private Material selectTool;
 
-    public ChunkSelector() {
-        this.chunkClient = new ChunkClient("localhost", 1337);
+    public ChunkSelector(ChunkClient client, Material selectTool) {
+        this.chunkClient = client;
+        this.selectTool = selectTool;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -26,7 +28,7 @@ public class ChunkSelector implements Listener {
         if (action != Action.RIGHT_CLICK_BLOCK && action != Action.RIGHT_CLICK_AIR) return;
 
         ItemStack heldItem = e.getPlayer().getInventory().getItemInMainHand();
-        if (heldItem == null || heldItem.getType() != Material.STICK)
+        if (heldItem == null || heldItem.getType() != selectTool)
             return;
 
 
@@ -42,9 +44,12 @@ public class ChunkSelector implements Listener {
             return;
 
         Chunk targetChunk = target.getChunk();
-        Plugin.getInstance().getLogger().info("Selected chunk (" + targetChunk.getX() + ", " + targetChunk.getZ() + ")");
+        Plugin.getInstance().getLogger().info("Selected chunk: (" + targetChunk.getX() + ", " + targetChunk.getZ() + ") in " + targetChunk.getWorld().getName() + " by " + e.getPlayer().getDisplayName());
 
-        new Thread(new ChunkHandler(targetChunk)).start();
+        new Thread(
+                () -> chunkClient.requestChunk(targetChunk),
+                "Chunk request at " + targetChunk.getX() + "," + targetChunk.getZ() + " in " + targetChunk.getWorld().getName()
+        ).start();
     }
 
     static Block getTargetBlock(Player player, int maxDistance) throws IllegalStateException
@@ -65,19 +70,5 @@ public class ChunkSelector implements Listener {
         }
 
         return result;
-    }
-
-    private class ChunkHandler implements Runnable {
-        private Chunk target;
-
-        public ChunkHandler(Chunk chunk) {
-            target = chunk;
-        }
-
-
-        @Override
-        public void run() {
-            chunkClient.requestChunk(target);
-        }
     }
 }
