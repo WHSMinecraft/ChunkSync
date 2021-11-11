@@ -4,5 +4,8 @@ client:
   port: 1337
   host: localhost
   select-tool: STICK
+
+  # Maximum number of blocks that can be replaced per tick. This blocks the main server thread, so choose carefully.
+  block-replace-budget: 4096
 server:
   port: 1337

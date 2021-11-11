@@ -13,17 +13,17 @@ public class ChunkReplacer {
 
     public static ChunkReplacer getInstance() {
         if (instance == null)
-            instance = new ChunkReplacer();
+            instance = new ChunkReplacer(Plugin.getInstance().getConfig().getInt("client.block-replace-budget", 4096));
         return instance;
     }
 
     // Block updates per tick. Updates have to be performed on the main thread, thus small chunks are important.
-    public final static int MAX_CHANGES = 4096;
-
+    private int MAX_CHANGES;
     private Queue<Change> changes;
 
-    private ChunkReplacer() {
+    private ChunkReplacer(int maxChanges) {
         instance = this;
+        MAX_CHANGES = maxChanges;
         changes = new LinkedList<>();
     }
 
@@ -39,10 +39,6 @@ public class ChunkReplacer {
                     c.location.getBlock().setBlockData(c.data);
                     changeBudget--;
                 }
-
-                int changed = MAX_CHANGES - changeBudget;
-                if (changed > 0)
-                    Plugin.getInstance().getLogger().info("Processed " + changed + " changes");
             }
         }.runTaskTimer(Plugin.getInstance(), 0, 1);
     }
